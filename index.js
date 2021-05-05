@@ -1,3 +1,4 @@
+"use strict";
 const TRIANGLE_PAIR = 2;
 const TRIANGLE_VERTICIES = 3;
 const VEC2_COUNT = 2;
@@ -821,18 +822,53 @@ function removeFileNameExt(fileName) {
     }
 }
 
+const buttons = []
 window.onload = () => {
+    const filterGallery = document.getElementById("filter-gallery");
+    const filtGalCtx = filterGallery.getContext("2d");
+    filterGallery.width = 600;
+    const buttonRowCount = 8;
+    const buttonArea = Math.floor(filterGallery.width / buttonRowCount);
+    const buttonMargin = 10;
+    const buttonSize = buttonArea - buttonMargin * 2;
     const filtersSelect = document.getElementById("filters");
+    let buttonIndex = 0;
     for (let name in filters) {
         filtersSelect.add(new Option(name));
+        buttons.push({name})
     }
+    filterGallery.height = buttonArea * Math.ceil(buttons.length / buttonRowCount) + 5;
 
+    function drawCheckeredPattern (ctx, x, y, width, height) {
+        const n = 10
+        const w = width / n 
+        const h = height / n 
+        for (let j = 0; j < n; j++) {
+            for (let i = 0; i < n; i++) {
+                if ((i + j) % 2) continue;
+                ctx.fillRect(x + i * w, y + j * h, w, h);
+            }
+        }
+    }
+    buttons.forEach((button, i) => {
+        const x = i % buttonRowCount;
+        const y = Math.floor(i / buttonRowCount);
+        filtGalCtx.fillStyle = "#f8f8f8";
+        filtGalCtx.fillRect(buttonMargin + buttonArea * x, buttonMargin + buttonArea * y, buttonSize, buttonSize);
+        filtGalCtx.fillStyle = "#d0d8df";
+        drawCheckeredPattern(filtGalCtx, buttonMargin + buttonArea * x, buttonMargin + buttonArea * y, buttonSize, buttonSize)
+        filtGalCtx.fillStyle = "#000";
+        filtGalCtx.textAlign = "center";
+        filtGalCtx.font = '15px serif';
+        filtGalCtx.fillText(button.name, buttonArea * x + buttonArea / 2, buttonArea * (y + 1) + 3);
+    })
+    window.frames = Array.from({length: 100}, (_, i) => filtGalCtx.getImageData(0, 0, filterGallery.width, filterGallery.height));
     const vertexAttribs = {
         "meshPosition": 0
     };
 
     const canvas = document.getElementById("preview");
-    const gl = canvas.getContext("webgl", {antialias: false, alpha: false});
+    const gl = canvas.getContext("webgl", {antialias: false});
     if (!gl) {
         throw new Error("Could not initialize WebGL context");
     }
@@ -922,6 +958,8 @@ window.onload = () => {
     }
 
     let start;
+    let readFrameIndex = 0;
+    let filterIndex = 0;
     function step(timestamp) {
         if (start === undefined) {
             start = timestamp;
@@ -932,11 +970,22 @@ window.onload = () => {
         gl.uniform1f(program.timeUniform, start * 0.001);
         gl.uniform2f(program.resolutionUniform, canvas.width, canvas.height);
 
-        gl.clearColor(0.0, 1.0, 0.0, 1.0);
+        if (readFrameIndex < 100) {
+            gl.clearColor(0.0, 0.0, 0.0, 0.0);
+        } else {
+            gl.clearColor(0.0, 1.0, 0.0, 1.0);
+        }
         gl.clear(gl.COLOR_BUFFER_BIT);
 
         gl.drawArrays(gl.TRIANGLES, 0, TRIANGLE_PAIR * TRIANGLE_VERTICIES);
-
+        if (readFrameIndex < 100) {
+            filtGalCtx.putImageData(frames[readFrameIndex], 0, 0);
+            const x = filterIndex % buttonRowCount;
+            const y = Math.floor(filterIndex / buttonRowCount);
+            filtGalCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, buttonMargin + buttonArea * x, buttonMargin + buttonArea * y, buttonSize, buttonSize)
+            frames[readFrameIndex] = filtGalCtx.getImageData(0, 0, filterGallery.width, filterGallery.height);
+            readFrameIndex++
+        }
         window.requestAnimationFrame(step);
     }
 

@@ -823,6 +823,7 @@ function removeFileNameExt(fileName) {
 }
 
 const buttons = []
+const numberOfFilters = Object.keys(filters).length
 window.onload = () => {
     const filterGallery = document.getElementById("filter-gallery");
     const filtGalCtx = filterGallery.getContext("2d");
@@ -959,6 +960,7 @@ window.onload = () => {
 
     let start;
     let readFrameIndex = 0;
+    let frameToDraw = 0;
     let filterIndex = 0;
     function step(timestamp) {
         if (start === undefined) {
@@ -973,19 +975,28 @@ window.onload = () => {
         if (readFrameIndex < 100) {
             gl.clearColor(0.0, 0.0, 0.0, 0.0);
         } else {
-            gl.clearColor(0.0, 1.0, 0.0, 1.0);
+            if (filterIndex < numberOfFilters) {
+                readFrameIndex = 0;
+                filterIndex++
+                filtersSelect.selectedIndex = filterIndex % numberOfFilters;
+                filtersSelect.onchange();
+                gl.clearColor(0.0, 0.0, 0.0, 0.0);
+            } else {
+                gl.clearColor(0.0, 1.0, 0.0, 1.0);
+            }
         }
         gl.clear(gl.COLOR_BUFFER_BIT);
 
         gl.drawArrays(gl.TRIANGLES, 0, TRIANGLE_PAIR * TRIANGLE_VERTICIES);
+            filtGalCtx.putImageData(frames[frameToDraw], 0, 0);
         if (readFrameIndex < 100) {
-            filtGalCtx.putImageData(frames[readFrameIndex], 0, 0);
             const x = filterIndex % buttonRowCount;
             const y = Math.floor(filterIndex / buttonRowCount);
             filtGalCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, buttonMargin + buttonArea * x, buttonMargin + buttonArea * y, buttonSize, buttonSize)
-            frames[readFrameIndex] = filtGalCtx.getImageData(0, 0, filterGallery.width, filterGallery.height);
+            frames[frameToDraw] = filtGalCtx.getImageData(0, 0, filterGallery.width, filterGallery.height);
             readFrameIndex++
         }
+        frameToDraw = (frameToDraw + 1) % 100
         window.requestAnimationFrame(step);
     }
 

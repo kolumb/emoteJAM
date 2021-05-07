@@ -824,6 +824,7 @@ function removeFileNameExt(fileName) {
 
 const buttons = []
 const numberOfFilters = Object.keys(filters).length
+
 window.onload = () => {
     const filterGallery = document.getElementById("filter-gallery");
     const filtGalCtx = filterGallery.getContext("2d");
@@ -832,6 +833,7 @@ window.onload = () => {
     const buttonArea = Math.floor(filterGallery.width / buttonRowCount);
     const buttonMargin = 10;
     const buttonSize = buttonArea - buttonMargin * 2;
+
     const filtersSelect = document.getElementById("filters");
     let buttonIndex = 0;
     for (let name in filters) {
@@ -840,6 +842,9 @@ window.onload = () => {
     }
     filterGallery.height = buttonArea * Math.ceil(buttons.length / buttonRowCount) + 5;
 
+    const vertexAttribs = {
+        "meshPosition": 0
+    };
     function drawCheckeredPattern (ctx, x, y, width, height) {
         const n = 10
         const w = width / n 
@@ -864,19 +869,23 @@ window.onload = () => {
         filtGalCtx.fillText(button.name, buttonArea * x + buttonArea / 2, buttonArea * (y + 1) + 3);
     })
     window.frames = Array.from({length: 100}, (_, i) => filtGalCtx.getImageData(0, 0, filterGallery.width, filterGallery.height));
-    const vertexAttribs = {
-        "meshPosition": 0
-    };
 
+    const canvasForButtons = document.createElement("canvas");
+    canvasForButtons.width = buttonSize;
+    canvasForButtons.height = buttonSize;
+    const ctxForButtons = canvasForButtons.getContext("webgl");
     const canvas = document.getElementById("preview");
     const gl = canvas.getContext("webgl", {antialias: false});
     if (!gl) {
         throw new Error("Could not initialize WebGL context");
     }
 
+    ctxForButtons.enable(gl.BLEND);
+    ctxForButtons.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
+    let programForButtons = loadFilterProgram(ctxForButtons, filters[filtersSelect.selectedOptions[0].value], vertexAttribs);
     let program = loadFilterProgram(gl, filters[filtersSelect.selectedOptions[0].value], vertexAttribs);
 
     filtersSelect.onchange = function() {
@@ -886,13 +895,16 @@ window.onload = () => {
 
     let gif = undefined;
 
-    // Bitmap Font
+    // Texture for emote
     {
         const customPreview = document.querySelector("#custom-preview");
         let emoteTexture = createTextureFromImage(gl, customPreview);
+        let emoteTextureForButtons = createTextureFromImage(ctxForButtons, customPreview);
 
         customPreview.onload = function() {
+            ctxForButtons.deleteTexture(emoteTexture);
             gl.deleteTexture(emoteTexture);
+            emoteTextureForButtons = createTextureFromImage(ctxForButtons, customPreview);
             emoteTexture = createTextureFromImage(gl, customPreview);
         };
 
@@ -942,12 +954,35 @@ window.onload = () => {
                 meshPositionBufferData[index + VEC2_Y] = (2 * ((quad >> 1) & 1) - 1);
             }
         }
+        let meshPositionBufferDataForButtons = new Float32Array(TRIANGLE_PAIR * TRIANGLE_VERTICIES * VEC2_COUNT);
+        for (let triangle = 0; triangle < TRIANGLE_PAIR; ++triangle) {
+            for (let vertex = 0; vertex < TRIANGLE_VERTICIES; ++vertex) {
+                const quad = triangle + vertex;
+                const index =
+                      triangle * TRIANGLE_VERTICIES * VEC2_COUNT +
+                      vertex * VEC2_COUNT;
+                meshPositionBufferDataForButtons[index + VEC2_X] = (2 * (quad & 1) - 1);
+                meshPositionBufferDataForButtons[index + VEC2_Y] = (2 * ((quad >> 1) & 1) - 1);
+            }
+        }
+
+        let meshPositionBufferForButtons = ctxForButtons.createBuffer();
+        ctxForButtons.bindBuffer(ctxForButtons.ARRAY_BUFFER, meshPositionBufferForButtons);
+        ctxForButtons.bufferData(ctxForButtons.ARRAY_BUFFER, meshPositionBufferDataForButtons, ctxForButtons.STATIC_DRAW);
 
         let meshPositionBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, meshPositionBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, meshPositionBufferData, gl.STATIC_DRAW);
 
         const meshPositionAttrib = vertexAttribs['meshPosition'];
+        ctxForButtons.vertexAttribPointer(
+            meshPositionAttrib,
+            VEC2_COUNT,
+            ctxForButtons.FLOAT,
+            false,
+            0,
+            0);
+        ctxForButtons.enableVertexAttribArray(meshPositionAttrib);
         gl.vertexAttribPointer(
             meshPositionAttrib,
             VEC2_COUNT,
@@ -962,7 +997,36 @@ window.onload = () => {
     let readFrameIndex = 0;
     let frameToDraw = 0;
     let filterIndex = 0;
+    let timeForButtons = 0;
+
+    function* renderButtons(){
+        for (let button of buttons){
+            for(let i = 0; i < 100; i++) {
+                filtGalCtx.putImageData(frames[i], 0, 0);
+                ctxForButtons.uniform1f(programForButtons.timeUniform, timeForButtons * 0.001);
+                ctxForButtons.uniform2f(programForButtons.resolutionUniform, canvasForButtons.width, canvasForButtons.height);
+                ctxForButtons.clearColor(0.0, 0.0, 0.0, 0.0);
+                ctxForButtons.clear(ctxForButtons.COLOR_BUFFER_BIT);
+                ctxForButtons.drawArrays(ctxForButtons.TRIANGLES, 0, TRIANGLE_PAIR * TRIANGLE_VERTICIES);
+                const x = filterIndex % buttonRowCount;
+                const y = Math.floor(filterIndex / buttonRowCount);
+                filtGalCtx.drawImage(canvasForButtons, buttonMargin + buttonArea * x, buttonMargin + buttonArea * y)
+                frames[i] = filtGalCtx.getImageData(0, 0, filterGallery.width, filterGallery.height);
+
+                timeForButtons += 16.666
+                yield
+            }
+            ctxForButtons.deleteProgram(programForButtons.id);
+            filterIndex = (filterIndex + 1) % buttons.length;
+            programForButtons = loadFilterProgram(ctxForButtons, filters[buttons[filterIndex].name], vertexAttribs);
+            yield
+        }
+    }
+    let generator = renderButtons();
+
     function step(timestamp) {
+        generator.next();
+
         if (start === undefined) {
             start = timestamp;
         }
@@ -972,30 +1036,12 @@ window.onload = () => {
         gl.uniform1f(program.timeUniform, start * 0.001);
         gl.uniform2f(program.resolutionUniform, canvas.width, canvas.height);
 
-        if (readFrameIndex < 100) {
-            gl.clearColor(0.0, 0.0, 0.0, 0.0);
-        } else {
-            if (filterIndex < numberOfFilters) {
-                readFrameIndex = 0;
-                filterIndex++
-                filtersSelect.selectedIndex = filterIndex % numberOfFilters;
-                filtersSelect.onchange();
-                gl.clearColor(0.0, 0.0, 0.0, 0.0);
-            } else {
-                gl.clearColor(0.0, 1.0, 0.0, 1.0);
-            }
-        }
+        gl.clearColor(0.0, 1.0, 0.0, 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
         gl.drawArrays(gl.TRIANGLES, 0, TRIANGLE_PAIR * TRIANGLE_VERTICIES);
-            filtGalCtx.putImageData(frames[frameToDraw], 0, 0);
-        if (readFrameIndex < 100) {
-            const x = filterIndex % buttonRowCount;
-            const y = Math.floor(filterIndex / buttonRowCount);
-            filtGalCtx.drawImage(canvas, 0, 0, canvas.width, canvas.height, buttonMargin + buttonArea * x, buttonMargin + buttonArea * y, buttonSize, buttonSize)
-            frames[frameToDraw] = filtGalCtx.getImageData(0, 0, filterGallery.width, filterGallery.height);
-            readFrameIndex++
-        }
+        filtGalCtx.putImageData(frames[frameToDraw], 0, 0);
+
         frameToDraw = (frameToDraw + 1) % 100
         window.requestAnimationFrame(step);
     }

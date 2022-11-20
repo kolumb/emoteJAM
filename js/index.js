@@ -25,7 +25,7 @@ function compileShaderSource(gl, source, shaderType) {
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        throw new Error("Could not compile " + shaderTypeToString() + " shader: " + gl.getShaderInfoLog(shader));
+        throw new Error("Could not compile ".concat(shaderTypeToString(), " shader: ").concat(gl.getShaderInfoLog(shader)));
     }
     return shader;
 }
@@ -43,7 +43,7 @@ function linkShaderProgram(gl, shaders, vertexAttribs) {
     }
     gl.linkProgram(program);
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-        throw new Error("Could not link shader program: " + gl.getProgramInfoLog(program));
+        throw new Error("Could not link shader program: ".concat(gl.getProgramInfoLog(program)));
     }
     return program;
 }
@@ -77,7 +77,7 @@ function loadFilterProgram(gl, filter, vertexAttribs) {
     var paramsInputs = {};
     var _loop_1 = function (paramName) {
         if (paramName in uniforms) {
-            throw new Error("Redefinition of existing uniform parameter " + paramName);
+            throw new Error("Redefinition of existing uniform parameter ".concat(paramName));
         }
         switch (filter.params[paramName].type) {
             case "float":
@@ -102,11 +102,11 @@ function loadFilterProgram(gl, filter, vertexAttribs) {
                         paramsPanel.dispatchEvent(new CustomEvent("paramsChanged"));
                     };
                     var label = (_a = filter.params[paramName].label) !== null && _a !== void 0 ? _a : paramName;
-                    paramsPanel.appendChild(div(span(label + ": "), valuePreview_1, div(valueInput)));
+                    paramsPanel.appendChild(div(span("".concat(label, ": ")), valuePreview_1, div(valueInput)));
                 }
                 break;
             default: {
-                throw new Error("Filter parameters do not support type " + filter.params[paramName].type);
+                throw new Error("Filter parameters do not support type ".concat(filter.params[paramName].type));
             }
         }
         uniforms[paramName] = gl.getUniformLocation(id, paramName);
@@ -179,7 +179,7 @@ function FilterList() {
         root.add(new Option(name_1));
     }
     root.selectedFilter$ = function () {
-        return filters[root.selectedOptions[0].value];
+        return filters["Crowd"];
     };
     root.onchange = function () {
         root.dispatchEvent(new CustomEvent('filterChanged', {
@@ -348,7 +348,7 @@ function FilterSelector() {
                 delay: dt * 1000,
                 dispose: 2,
             });
-            renderProgress.style.width = (t / duration) * 50 + "%";
+            renderProgress.style.width = "".concat((t / duration) * 50, "%");
             t += dt;
         }
         gif.on('finished', function (blob) {
@@ -360,7 +360,7 @@ function FilterSelector() {
             renderSpinner.style.display = "none";
         });
         gif.on('progress', function (p) {
-            renderProgress.style.width = 50 + p * 50 + "%";
+            renderProgress.style.width = "".concat(50 + p * 50, "%");
         });
         gif.render();
         return gif;
@@ -416,6 +416,6 @@ window.onload = function () {
             gif.abort();
         }
         var fileName = imageSelector.selectedFileName$();
-        gif = filterSelector.render$(fileName + ".gif");
+        gif = filterSelector.render$("".concat(fileName, ".gif"));
     };
 };

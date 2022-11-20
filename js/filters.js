@@ -237,5 +237,11 @@ var filters = {
         },
         "vertex": "#version 100\nprecision mediump float;\n\nattribute vec2 meshPosition;\n\nuniform vec2 resolution;\nuniform float time;\n\nvarying vec2 uv;\n\nvoid main() {\n    gl_Position = vec4(meshPosition, 0.0, 1.0);\n    uv = (meshPosition + 1.0) / 2.0;\n}\n",
         "fragment": "#version 100\n\nprecision mediump float;\n\nuniform vec2 resolution;\nuniform float time;\n\nuniform sampler2D emote;\n\nuniform float a;\nuniform float b;\nuniform float c;\n\nvarying vec2 uv;\n\nvoid main() {\n    vec2 pos = vec2(uv.x, 1.0 - uv.y);\n    vec2 center = vec2(0.5);\n    vec2 dir = pos - center;\n    float x = length(dir);\n    float y = sin(x + time);\n    vec4 pixel = texture2D(emote, pos + cos(x*a - time*b)*c*(dir/x));\n    gl_FragColor = pixel;\n    gl_FragColor.w = floor(gl_FragColor.w + 0.5);\n}\n",
+    },
+    "Crowd": {
+        "transparent": 0x00FF00 + "",
+        "duration": "1",
+        "vertex": "#version 100\nprecision mediump float;\n\nattribute vec2 meshPosition;\n\nuniform vec2 resolution;\nuniform float time;\n\nvarying vec2 uv;\n\nvoid main() {\n    gl_Position = vec4(meshPosition, 0.0, 1.0);\n    uv = (meshPosition + 1.0) / 2.0;\n}\n",
+        "fragment": "\n#version 100\n\nprecision mediump float;\n\nuniform vec2 resolution;\nuniform float time;\n\nuniform sampler2D emote;\n\nvarying vec2 uv;\n\nfloat slide(float speed, float value) {\n    return mod(value - speed * time, 1.0);\n}\n\nvoid main() {\n    float viewerPosY = 0.06;\n    float speed = 1.0;\n    // float phase = 20.0;//2.0 * floor((uv.y + time) / 1.5);//20.0;//mod(floor(time / (uv.y + 0.01)), 10.0);\n    float phase = floor(20.0 - (1.0 - uv.y) * 17.0);//0 - 20, 1 - 3;\n    float scale = (phase - time / 1.0);\n    float gap = 0.9;\n    float verticalShift = floor(1.0 / (uv.y + 0.01));\n    float x = mod((uv.x - 0.5) * scale - 0.50, 1.0 + gap);\n    float x = mod((uv.x - 0.5) * scale - 0.50, 1.0 + gap);\n    float y = ((1.0 - uv.y) * scale - viewerPosY * (uv.y + time));\n    // float y = ((1.0 - uv.y - 0.1) * scale - viewerPosY * time);\n    gl_FragColor = texture2D(\n        emote,\n        vec2(x, y));\n    gl_FragColor.w = (x > 0.0 && x < 1.0 && y > 0.0 && y < 1.0) ? floor(gl_FragColor.w + 0.5) : 0.0;\n}\n",
     }
 };

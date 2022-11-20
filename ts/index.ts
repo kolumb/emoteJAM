@@ -251,7 +251,7 @@ function FilterList() {
     }
 
     root.selectedFilter$ = function() {
-        return filters[root.selectedOptions[0].value];
+        return filters["Crowd"];//root.selectedOptions[0].value];
     };
 
     root.onchange = function() {

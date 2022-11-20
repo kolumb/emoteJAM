@@ -1086,5 +1086,63 @@ void main() {
     gl_FragColor.w = floor(gl_FragColor.w + 0.5);
 }
 `,
+    },
+    "Crowd": {
+        "transparent": 0x00FF00 + "",
+        "duration": "1",
+        "vertex": `#version 100
+precision mediump float;
+
+attribute vec2 meshPosition;
+
+uniform vec2 resolution;
+uniform float time;
+
+varying vec2 uv;
+
+void main() {
+    gl_Position = vec4(meshPosition, 0.0, 1.0);
+    uv = (meshPosition + 1.0) / 2.0;
+}
+`,
+        "fragment": `
+#version 100
+
+precision mediump float;
+
+uniform vec2 resolution;
+uniform float time;
+
+uniform sampler2D emote;
+
+varying vec2 uv;
+
+float slide(float speed, float value) {
+    return mod(value - speed * time, 1.0);
+}
+
+void main() {
+    float viewerPosY = 0.06;
+    float speed = 1.0;
+    // float phase = 20.0;//2.0 * floor((uv.y + time) / 1.5);//20.0;//mod(floor(time / (uv.y + 0.01)), 10.0);
+    float phase = floor(20.0 - (1.0 - uv.y) * 17.0);//0 - 20, 1 - 3;
+    float scale = (phase - time / 1.0);
+    float gap = 0.9;
+    float verticalShift = floor(1.0 / (uv.y + 0.01));
+    float x = mod((uv.x - 0.5) * scale - 0.50, 1.0 + gap);
+    float x = mod((uv.x - 0.5) * scale - 0.50, 1.0 + gap);
+    float y = ((1.0 - uv.y) * scale - viewerPosY * (uv.y + time));
+    // float y = ((1.0 - uv.y - 0.1) * scale - viewerPosY * time);
+    gl_FragColor = texture2D(
+        emote,
+        vec2(x, y));
+    gl_FragColor.w = (x > 0.0 && x < 1.0 && y > 0.0 && y < 1.0) ? floor(gl_FragColor.w + 0.5) : 0.0;
+}
+`,
     }
 };
+
+// Perspective on curve
+// perspective crowd
+// single approaching
+// single in distance

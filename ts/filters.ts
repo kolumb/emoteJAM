@@ -1124,18 +1124,30 @@ float slide(float speed, float value) {
 void main() {
     float viewerPosY = 0.06;
     float speed = 1.0;
-    // float phase = 20.0;//2.0 * floor((uv.y + time) / 1.5);//20.0;//mod(floor(time / (uv.y + 0.01)), 10.0);
-    float phase = floor(20.0 - (1.0 - uv.y) * 17.0);//0 - 20, 1 - 3;
-    float scale = (phase - time / 1.0);
+    float phase = floor(20.0 - (1.0 - uv.y) * 17.0);
+    //float scale = (phase - time / 1.0);
     float gap = 0.9;
     float verticalShift = floor(1.0 / (uv.y + 0.01));
-    float x = mod((uv.x - 0.5) * scale - 0.50, 1.0 + gap);
-    float x = mod((uv.x - 0.5) * scale - 0.50, 1.0 + gap);
-    float y = ((1.0 - uv.y) * scale - viewerPosY * (uv.y + time));
-    // float y = ((1.0 - uv.y - 0.1) * scale - viewerPosY * time);
+
+    // scale = floor(5.0 / (fixedY + 0.4))
+    // scale = 5.0 / (fixedY + 0.4)
+    // fixedY = 5.0 / scale - 0.4
+
+    float fixedY = 1.0 - uv.y;
+    float scale = floor(5.0 / (fixedY + 0.4)); // 0.4..1.7 // 7.14(5.9)..3
+float diff = (5.0 / (fixedY + 0.4) - scale);
+    float fixedYnext = 5.0 / (scale) - 0.4;
+    float fixedYprev = 5.0 / (scale - 1.0) - 0.4;
+    float stepSize = fixedYprev - fixedYnext  ;
+    // float prevStepRound = 5.0 / (fixedYnext + 0.4);
+    float newY = (1.0 - diff) * (1.0 / scale) * 3.5;// * (1.0 - diff);// * scale;
+    float newX = (uv.x - 0.5) * scale;
+    float x = mod(newX + time / 5.0, 1.0 + gap); //mod((uv.x - 0.5) * scale - 0.50, 1.0 + gap);
+    float y = newY; //((1.0 - uv.y) * scale - viewerPosY * (uv.y + time));
     gl_FragColor = texture2D(
         emote,
         vec2(x, y));
+    // gl_FragColor.x = gl_FragColor.y = gl_FragColor.z = (1.0 - diff) - stepSize > 0.0 ? 0.0 : 1.0;//(1.0 / scale);//newY;//1.0 - diff;// * scale;
     gl_FragColor.w = (x > 0.0 && x < 1.0 && y > 0.0 && y < 1.0) ? floor(gl_FragColor.w + 0.5) : 0.0;
 }
 `,

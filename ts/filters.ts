@@ -1094,18 +1094,10 @@ void main() {
             "crowdShift": {
                 "label": "crowdShift",
                 "type": "float",
-                "init": 0.35,
+                "init": 0.0,
                 "min": 0.0,
                 "max": 3.0,
                 "step": 0.05,
-            },
-            "crowdShiftSpeed": {
-                "label": "CrowdSh.Sp",
-                "type": "float",
-                "init": 0.0,
-                "min": 0.0,
-                "max": 2.0,
-                "step": 0.02,
             },
             "cameraAngle": {
                 "label": "Camr Ang.",
@@ -1123,13 +1115,21 @@ void main() {
                 "max": 5.0,
                 "step": 0.1,
             },
-            "gap": {
-                "label": "Gap",
+            "xGap": {
+                "label": "Horiz Gap",
                 "type": "float",
                 "init": 0.3,
                 "min": -0.7,
                 "max": 2.0,
                 "step": 0.05,
+            },
+            "yGap": {
+                "label": "Vert Gap",
+                "type": "float",
+                "init": 0.2,
+                "min": 0.2,
+                "max": 2.0,
+                "step": 0.02,
             },
             "xShift": {
                 "label": "Side Shift",
@@ -1166,10 +1166,11 @@ uniform float time;
 uniform sampler2D emote;
 
 uniform float crowdShift;
-uniform float crowdShiftSpeed;
 uniform float cameraAngle;
 uniform float cameraHeight;
-uniform float gap;
+uniform float xGap;
+uniform float yGap;
+uniform float crowdShiftSpeed;
 uniform float xShift;
 
 varying vec2 uv;
@@ -1177,15 +1178,17 @@ varying vec2 uv;
 void main() {
     float screenY = 1.0 - uv.y;
     float originalY = screenY;
+    float cameraHeight2 = cameraHeight;// * yGap;// - 1.2;
+    float cameraAngle2 = cameraAngle;// /yGap;
     for(int i = 0; i < 5; i++) {
-        float scale = floor(cameraHeight / (screenY + cameraAngle));
-        float screenYnext = cameraHeight / (scale + 1.0) - cameraAngle;
-        float screenYprev = cameraHeight / (scale) - cameraAngle;
+        float scale = floor( cameraHeight2 / (screenY + cameraAngle2));
+        float screenYnext = cameraHeight2 / (scale + 1.0) - cameraAngle2;
+        float screenYprev = cameraHeight2 / (scale) - cameraAngle2;
         float stepSize = screenYprev - screenYnext;
         float rowProgress = (originalY - screenYnext) / stepSize;
-        float screenX = (uv.x - 0.5 + scale * crowdShift) * scale + 0.5;
-        float x = mod(screenX + xShift, 1.0 + gap);
-        float y = rowProgress * scale * stepSize;
+        float screenX = (uv.x - 0.5 + scale * crowdShift) * scale / yGap + 0.5;
+        float x = mod(screenX + xShift, 1.0 + xGap);
+        float y = rowProgress * scale * stepSize / yGap;
         if (x >= 0.0 && x <= 1.0 && y >= 0.0 && y <= 1.0) {
             gl_FragColor = texture2D(
                 emote,
@@ -1195,15 +1198,10 @@ void main() {
         if (gl_FragColor.w > 0.0) {
             break;
         } else {
-            screenY -= (screenYnext - (cameraHeight / (scale + 2.0) - cameraAngle));
+            screenY -= (screenYnext - (cameraHeight2 / (scale + 2.0) - cameraAngle2));
         }
     }
 }
 `,
     }
 };
-
-// Perspective on curve
-// perspective crowd
-// single approaching
-// single in distance

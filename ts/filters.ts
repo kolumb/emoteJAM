@@ -1089,7 +1089,57 @@ void main() {
     },
     "Crowd": {
         "transparent": 0x00FF00 + "",
-        "duration": "6.28",
+        "duration": "2 * Math.PI * speed",
+        "params": {
+            "crowdShift": {
+                "label": "crowdShift",
+                "type": "float",
+                "init": 0.35,
+                "min": 0.0,
+                "max": 3.0,
+                "step": 0.05,
+            },
+            "crowdShiftSpeed": {
+                "label": "CrowdSh.Sp",
+                "type": "float",
+                "init": 0.0,
+                "min": 0.0,
+                "max": 2.0,
+                "step": 0.02,
+            },
+            "cameraAngle": {
+                "label": "Camr Ang.",
+                "type": "float",
+                "init": 0.25,
+                "min": -0.5,
+                "max": 1.0,
+                "step": 0.05,
+            },
+            "cameraHeight": {
+                "label": "CameraHght",
+                "type": "float",
+                "init": 1.9,
+                "min": 0.5,
+                "max": 5.0,
+                "step": 0.1,
+            },
+            "gap": {
+                "label": "Gap",
+                "type": "float",
+                "init": 0.3,
+                "min": -0.95,
+                "max": 2.0,
+                "step": 0.05,
+            },
+            "xShift": {
+                "label": "Side Shift",
+                "type": "float",
+                "init": 0.0,
+                "min": 0.0,
+                "max": 3.0,
+                "step": 0.05,
+            }
+        },
         "vertex": `#version 100
 precision mediump float;
 
@@ -1115,19 +1165,16 @@ uniform float time;
 
 uniform sampler2D emote;
 
+uniform float crowdShift;
+uniform float crowdShiftSpeed;
+uniform float cameraAngle;
+uniform float cameraHeight;
+uniform float gap;
+uniform float xShift;
+
 varying vec2 uv;
 
-float slide(float speed, float value) {
-    return mod(value - speed * time, 1.0);
-}
-
 void main() {
-    float speed = 0.5;
-    float crowdShift = 0.1 * time;
-    float cameraAngle = 0.01 + 0.5 * cos(time * 2.1 * speed);
-    float cameraHeight = 0.8 + 0.9 + 0.9 * sin(time * speed);
-    float gap = 0.6;
-
     float fixedY = 1.0 - uv.y;
     float originalY = fixedY;
     for(int i = 0; i < 5; i++) {
@@ -1138,7 +1185,7 @@ void main() {
         float stepSize = fixedYprev - fixedYnext;
         float rowProgress = (originalY - fixedYnext) / stepSize;
         float newX = (uv.x + scale * crowdShift - 0.5) * scale + 0.5;
-        float x = mod(newX + cos(time * speed), 1.0 + gap);
+        float x = mod(newX + xShift, 1.0 + gap);
         float y = rowProgress * (1.0 * scale) * stepSize;
         if (x >= 0.0 && x <= 1.0 && y >= 0.0 && y <= 1.0) {
             gl_FragColor = texture2D(

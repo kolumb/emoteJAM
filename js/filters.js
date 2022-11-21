@@ -240,8 +240,58 @@ var filters = {
     },
     "Crowd": {
         "transparent": 0x00FF00 + "",
-        "duration": "6.28",
+        "duration": "2 * Math.PI * speed",
+        "params": {
+            "crowdShift": {
+                "label": "crowdShift",
+                "type": "float",
+                "init": 0.35,
+                "min": 0.0,
+                "max": 3.0,
+                "step": 0.05,
+            },
+            "crowdShiftSpeed": {
+                "label": "CrowdSh.Sp",
+                "type": "float",
+                "init": 0.0,
+                "min": 0.0,
+                "max": 2.0,
+                "step": 0.02,
+            },
+            "cameraAngle": {
+                "label": "Camr Ang.",
+                "type": "float",
+                "init": 0.25,
+                "min": -0.5,
+                "max": 1.0,
+                "step": 0.05,
+            },
+            "cameraHeight": {
+                "label": "CameraHght",
+                "type": "float",
+                "init": 1.9,
+                "min": 0.5,
+                "max": 5.0,
+                "step": 0.1,
+            },
+            "gap": {
+                "label": "Gap",
+                "type": "float",
+                "init": 0.3,
+                "min": -0.95,
+                "max": 2.0,
+                "step": 0.05,
+            },
+            "xShift": {
+                "label": "Side Shift",
+                "type": "float",
+                "init": 0.0,
+                "min": 0.0,
+                "max": 3.0,
+                "step": 0.05,
+            }
+        },
         "vertex": "#version 100\nprecision mediump float;\n\nattribute vec2 meshPosition;\n\nuniform vec2 resolution;\nuniform float time;\n\nvarying vec2 uv;\n\nvoid main() {\n    gl_Position = vec4(meshPosition, 0.0, 1.0);\n    uv = (meshPosition + 1.0) / 2.0;\n}\n",
-        "fragment": "\n#version 100\n\nprecision mediump float;\n\nuniform vec2 resolution;\nuniform float time;\n\nuniform sampler2D emote;\n\nvarying vec2 uv;\n\nfloat slide(float speed, float value) {\n    return mod(value - speed * time, 1.0);\n}\n\nvoid main() {\n    float speed = 0.5;\n    float crowdShift = 0.1 * time;\n    float cameraAngle = 0.01 + 0.5 * cos(time * 2.1 * speed);\n    float cameraHeight = 0.8 + 0.9 + 0.9 * sin(time * speed);\n    float gap = 0.6;\n\n    float fixedY = 1.0 - uv.y;\n    float originalY = fixedY;\n    for(int i = 0; i < 5; i++) {\n        float scale = floor(cameraHeight / (fixedY + cameraAngle));\n        float fixedYnextNext = cameraHeight / (scale + 2.0) - cameraAngle;\n        float fixedYnext = cameraHeight / (scale + 1.0) - cameraAngle;\n        float fixedYprev = cameraHeight / (scale) - cameraAngle;\n        float stepSize = fixedYprev - fixedYnext;\n        float rowProgress = (originalY - fixedYnext) / stepSize;\n        float newX = (uv.x + scale * crowdShift - 0.5) * scale + 0.5;\n        float x = mod(newX + cos(time * speed), 1.0 + gap);\n        float y = rowProgress * (1.0 * scale) * stepSize;\n        if (x >= 0.0 && x <= 1.0 && y >= 0.0 && y <= 1.0) {\n            gl_FragColor = texture2D(\n                emote,\n                vec2(x, y));\n            gl_FragColor.w = floor(gl_FragColor.w + 0.5);\n        }\n        if (gl_FragColor.w > 0.0) {\n            break;\n        } else {\n            fixedY -= (fixedYnext - fixedYnextNext);\n        }\n    }\n}\n",
+        "fragment": "\n#version 100\n\nprecision mediump float;\n\nuniform vec2 resolution;\nuniform float time;\n\nuniform sampler2D emote;\n\nuniform float crowdShift;\nuniform float crowdShiftSpeed;\nuniform float cameraAngle;\nuniform float cameraHeight;\nuniform float gap;\nuniform float xShift;\n\nvarying vec2 uv;\n\nvoid main() {\n    float fixedY = 1.0 - uv.y;\n    float originalY = fixedY;\n    for(int i = 0; i < 5; i++) {\n        float scale = floor(cameraHeight / (fixedY + cameraAngle));\n        float fixedYnextNext = cameraHeight / (scale + 2.0) - cameraAngle;\n        float fixedYnext = cameraHeight / (scale + 1.0) - cameraAngle;\n        float fixedYprev = cameraHeight / (scale) - cameraAngle;\n        float stepSize = fixedYprev - fixedYnext;\n        float rowProgress = (originalY - fixedYnext) / stepSize;\n        float newX = (uv.x + scale * crowdShift - 0.5) * scale + 0.5;\n        float x = mod(newX + xShift, 1.0 + gap);\n        float y = rowProgress * (1.0 * scale) * stepSize;\n        if (x >= 0.0 && x <= 1.0 && y >= 0.0 && y <= 1.0) {\n            gl_FragColor = texture2D(\n                emote,\n                vec2(x, y));\n            gl_FragColor.w = floor(gl_FragColor.w + 0.5);\n        }\n        if (gl_FragColor.w > 0.0) {\n            break;\n        } else {\n            fixedY -= (fixedYnext - fixedYnextNext);\n        }\n    }\n}\n",
     }
 };

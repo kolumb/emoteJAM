@@ -1122,37 +1122,36 @@ float slide(float speed, float value) {
 }
 
 void main() {
-    float time1 = 0.0;
-    float viewerPosY = 0.06;
-    float cameraAngle = 0.7;// + cos(time) * 0.5;
-    float cameraHight = 3.0 + sin(time);
-    float speed = 1.0;
-    float phase = floor(20.0 - (1.0 - uv.y) * 17.0);
-    //float scale = (phase - time / 1.0);
+    float speed = 0.5;
+    float crowdShift = 0.1 * time;
+    float cameraAngle = 0.01 + 0.5 * cos(time * 2.1 * speed);
+    float cameraHeight = 0.8 + 0.9 + 0.9 * sin(time * speed);
     float gap = 0.6;
-    float verticalShift = floor(1.0 / (uv.y + 0.01));
-
-    // scale = floor(cameraHight / (fixedY + cameraAngle))
-    // scale = cameraHight / (fixedY + cameraAngle)
-    // fixedY = cameraHight / scale - cameraAngle
 
     float fixedY = 1.0 - uv.y;
-    float scale = floor(cameraHight / (fixedY + cameraAngle)); // 0.7..1.7 // 7.14(5.9)..3
-float diff = (cameraHight / (fixedY + cameraAngle) - scale);
-    float fixedYnext = cameraHight / (scale + 1.0) - cameraAngle;
-    float fixedYprev = cameraHight / (scale) - cameraAngle;
-    float stepSize = fixedYprev - fixedYnext;
-    float tillNextRow = (fixedY - fixedYnext) / stepSize;
-    // float prevStepRound = cameraHight / (fixedYnext + cameraAngle);
-    float newY = tillNextRow * (1.0 * scale) * stepSize;// * (1.0 - diff);// * scale;
-    float newX = (uv.x - 0.5) * scale + 0.5;
-    float x = mod(newX + time1 / cameraHight, 1.0 + gap); //mod((uv.x - 0.5) * scale - 0.50, 1.0 + gap);
-    float y = newY; //((1.0 - uv.y) * scale - viewerPosY * (uv.y + time));
-    gl_FragColor = texture2D(
-        emote,
-        vec2(x, y));
-    // gl_FragColor.x = gl_FragColor.y = gl_FragColor.z = ;//(1.0 - diff) - stepSize > 0.0 ? 0.0 : 1.0;//(1.0 / scale);//newY;//1.0 - diff;// * scale;
-    gl_FragColor.w = (x >= 0.0 && x <= 1.0 && y >= 0.0 && y <= 1.0) ? floor(gl_FragColor.w + 0.5) : 0.0;
+    float originalY = fixedY;
+    for(int i = 0; i < 5; i++) {
+        float scale = floor(cameraHeight / (fixedY + cameraAngle));
+        float fixedYnextNext = cameraHeight / (scale + 2.0) - cameraAngle;
+        float fixedYnext = cameraHeight / (scale + 1.0) - cameraAngle;
+        float fixedYprev = cameraHeight / (scale) - cameraAngle;
+        float stepSize = fixedYprev - fixedYnext;
+        float rowProgress = (originalY - fixedYnext) / stepSize;
+        float newX = (uv.x + scale * crowdShift - 0.5) * scale + 0.5;
+        float x = mod(newX + cos(time * speed), 1.0 + gap);
+        float y = rowProgress * (1.0 * scale) * stepSize;
+        if (x >= 0.0 && x <= 1.0 && y >= 0.0 && y <= 1.0) {
+            gl_FragColor = texture2D(
+                emote,
+                vec2(x, y));
+            gl_FragColor.w = floor(gl_FragColor.w + 0.5);
+        }
+        if (gl_FragColor.w > 0.0) {
+            break;
+        } else {
+            fixedY -= (fixedYnext - fixedYnextNext);
+        }
+    }
 }
 `,
     }

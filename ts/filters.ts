@@ -1127,7 +1127,7 @@ void main() {
                 "label": "Gap",
                 "type": "float",
                 "init": 0.3,
-                "min": -0.95,
+                "min": -0.7,
                 "max": 2.0,
                 "step": 0.05,
             },
@@ -1175,18 +1175,17 @@ uniform float xShift;
 varying vec2 uv;
 
 void main() {
-    float fixedY = 1.0 - uv.y;
-    float originalY = fixedY;
+    float screenY = 1.0 - uv.y;
+    float originalY = screenY;
     for(int i = 0; i < 5; i++) {
-        float scale = floor(cameraHeight / (fixedY + cameraAngle));
-        float fixedYnextNext = cameraHeight / (scale + 2.0) - cameraAngle;
-        float fixedYnext = cameraHeight / (scale + 1.0) - cameraAngle;
-        float fixedYprev = cameraHeight / (scale) - cameraAngle;
-        float stepSize = fixedYprev - fixedYnext;
-        float rowProgress = (originalY - fixedYnext) / stepSize;
-        float newX = (uv.x + scale * crowdShift - 0.5) * scale + 0.5;
-        float x = mod(newX + xShift, 1.0 + gap);
-        float y = rowProgress * (1.0 * scale) * stepSize;
+        float scale = floor(cameraHeight / (screenY + cameraAngle));
+        float screenYnext = cameraHeight / (scale + 1.0) - cameraAngle;
+        float screenYprev = cameraHeight / (scale) - cameraAngle;
+        float stepSize = screenYprev - screenYnext;
+        float rowProgress = (originalY - screenYnext) / stepSize;
+        float screenX = (uv.x - 0.5 + scale * crowdShift) * scale + 0.5;
+        float x = mod(screenX + xShift, 1.0 + gap);
+        float y = rowProgress * scale * stepSize;
         if (x >= 0.0 && x <= 1.0 && y >= 0.0 && y <= 1.0) {
             gl_FragColor = texture2D(
                 emote,
@@ -1196,7 +1195,7 @@ void main() {
         if (gl_FragColor.w > 0.0) {
             break;
         } else {
-            fixedY -= (fixedYnext - fixedYnextNext);
+            screenY -= (screenYnext - (cameraHeight / (scale + 2.0) - cameraAngle));
         }
     }
 }

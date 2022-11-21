@@ -1126,8 +1126,8 @@ void main() {
             "yGap": {
                 "label": "Vert Gap",
                 "type": "float",
-                "init": 0.2,
-                "min": 0.2,
+                "init": 0.4,
+                "min": -2.0,
                 "max": 2.0,
                 "step": 0.02,
             },
@@ -1137,6 +1137,22 @@ void main() {
                 "init": 0.0,
                 "min": 0.0,
                 "max": 3.0,
+                "step": 0.05,
+            },
+            "abc": {
+                "label": "abc",
+                "type": "float",
+                "init": 0.0,
+                "min": -3.0,
+                "max": 30.0,
+                "step": 0.05,
+            },
+            "perspective": {
+                "label": "perspective",
+                "type": "float",
+                "init": 3.0,
+                "min": -3.0,
+                "max": 30.0,
                 "step": 0.05,
             }
         },
@@ -1172,23 +1188,25 @@ uniform float xGap;
 uniform float yGap;
 uniform float crowdShiftSpeed;
 uniform float xShift;
+uniform float abc;
+uniform float perspective;
 
 varying vec2 uv;
 
 void main() {
     float screenY = 1.0 - uv.y;
     float originalY = screenY;
-    float cameraHeight2 = cameraHeight;// * yGap;// - 1.2;
+    float cameraHeight2 = cameraHeight + abc;// * yGap;// - 1.2;
     float cameraAngle2 = cameraAngle;// /yGap;
     for(int i = 0; i < 5; i++) {
-        float scale = floor( cameraHeight2 / (screenY + cameraAngle2));
-        float screenYnext = cameraHeight2 / (scale + 1.0) - cameraAngle2;
-        float screenYprev = cameraHeight2 / (scale) - cameraAngle2;
+        float scale = floor( cameraHeight2 / (screenY + cameraAngle2)) - abc;
+        float screenYnext = cameraHeight2 / (scale + 1.0 + abc) - cameraAngle2;
+        float screenYprev = cameraHeight2 / (scale + abc) - cameraAngle2;
         float stepSize = screenYprev - screenYnext;
         float rowProgress = (originalY - screenYnext) / stepSize;
-        float screenX = (uv.x - 0.5 + scale * crowdShift) * scale / yGap + 0.5;
+        float screenX = (uv.x - 0.5 + scale * crowdShift) * scale / 0.4 / (perspective - originalY) + 0.5;
         float x = mod(screenX + xShift, 1.0 + xGap);
-        float y = rowProgress * scale * stepSize / yGap;
+        float y = rowProgress * scale * stepSize;
         if (x >= 0.0 && x <= 1.0 && y >= 0.0 && y <= 1.0) {
             gl_FragColor = texture2D(
                 emote,
@@ -1198,7 +1216,7 @@ void main() {
         if (gl_FragColor.w > 0.0) {
             break;
         } else {
-            screenY -= (screenYnext - (cameraHeight2 / (scale + 2.0) - cameraAngle2));
+            screenY -= (screenYnext - (cameraHeight2 / (scale + 2.0 + abc) - cameraAngle2));
         }
     }
 }

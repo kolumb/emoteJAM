@@ -277,8 +277,8 @@ var filters = {
             "yGap": {
                 "label": "Vert Gap",
                 "type": "float",
-                "init": 0.2,
-                "min": 0.2,
+                "init": 0.4,
+                "min": -2.0,
                 "max": 2.0,
                 "step": 0.02,
             },
@@ -289,9 +289,25 @@ var filters = {
                 "min": 0.0,
                 "max": 3.0,
                 "step": 0.05,
+            },
+            "abc": {
+                "label": "abc",
+                "type": "float",
+                "init": 0.0,
+                "min": -3.0,
+                "max": 30.0,
+                "step": 0.05,
+            },
+            "perspective": {
+                "label": "perspective",
+                "type": "float",
+                "init": 3.0,
+                "min": -3.0,
+                "max": 30.0,
+                "step": 0.05,
             }
         },
         "vertex": "#version 100\nprecision mediump float;\n\nattribute vec2 meshPosition;\n\nuniform vec2 resolution;\nuniform float time;\n\nvarying vec2 uv;\n\nvoid main() {\n    gl_Position = vec4(meshPosition, 0.0, 1.0);\n    uv = (meshPosition + 1.0) / 2.0;\n}\n",
-        "fragment": "\n#version 100\n\nprecision mediump float;\n\nuniform vec2 resolution;\nuniform float time;\n\nuniform sampler2D emote;\n\nuniform float crowdShift;\nuniform float cameraAngle;\nuniform float cameraHeight;\nuniform float xGap;\nuniform float yGap;\nuniform float crowdShiftSpeed;\nuniform float xShift;\n\nvarying vec2 uv;\n\nvoid main() {\n    float screenY = 1.0 - uv.y;\n    float originalY = screenY;\n    float cameraHeight2 = cameraHeight;// * yGap;// - 1.2;\n    float cameraAngle2 = cameraAngle;// /yGap;\n    for(int i = 0; i < 5; i++) {\n        float scale = floor( cameraHeight2 / (screenY + cameraAngle2));\n        float screenYnext = cameraHeight2 / (scale + 1.0) - cameraAngle2;\n        float screenYprev = cameraHeight2 / (scale) - cameraAngle2;\n        float stepSize = screenYprev - screenYnext;\n        float rowProgress = (originalY - screenYnext) / stepSize;\n        float screenX = (uv.x - 0.5 + scale * crowdShift) * scale / yGap + 0.5;\n        float x = mod(screenX + xShift, 1.0 + xGap);\n        float y = rowProgress * scale * stepSize / yGap;\n        if (x >= 0.0 && x <= 1.0 && y >= 0.0 && y <= 1.0) {\n            gl_FragColor = texture2D(\n                emote,\n                vec2(x, y));\n            gl_FragColor.w = floor(gl_FragColor.w + 0.5);\n        }\n        if (gl_FragColor.w > 0.0) {\n            break;\n        } else {\n            screenY -= (screenYnext - (cameraHeight2 / (scale + 2.0) - cameraAngle2));\n        }\n    }\n}\n",
+        "fragment": "\n#version 100\n\nprecision mediump float;\n\nuniform vec2 resolution;\nuniform float time;\n\nuniform sampler2D emote;\n\nuniform float crowdShift;\nuniform float cameraAngle;\nuniform float cameraHeight;\nuniform float xGap;\nuniform float yGap;\nuniform float crowdShiftSpeed;\nuniform float xShift;\nuniform float abc;\nuniform float perspective;\n\nvarying vec2 uv;\n\nvoid main() {\n    float screenY = 1.0 - uv.y;\n    float originalY = screenY;\n    float cameraHeight2 = cameraHeight + abc;// * yGap;// - 1.2;\n    float cameraAngle2 = cameraAngle;// /yGap;\n    for(int i = 0; i < 5; i++) {\n        float scale = floor( cameraHeight2 / (screenY + cameraAngle2)) - abc;\n        float screenYnext = cameraHeight2 / (scale + 1.0 + abc) - cameraAngle2;\n        float screenYprev = cameraHeight2 / (scale + abc) - cameraAngle2;\n        float stepSize = screenYprev - screenYnext;\n        float rowProgress = (originalY - screenYnext) / stepSize;\n        float screenX = (uv.x - 0.5 + scale * crowdShift) * scale / 0.4 / (perspective - originalY) + 0.5;\n        float x = mod(screenX + xShift, 1.0 + xGap);\n        float y = rowProgress * scale * stepSize;\n        if (x >= 0.0 && x <= 1.0 && y >= 0.0 && y <= 1.0) {\n            gl_FragColor = texture2D(\n                emote,\n                vec2(x, y));\n            gl_FragColor.w = floor(gl_FragColor.w + 0.5);\n        }\n        if (gl_FragColor.w > 0.0) {\n            break;\n        } else {\n            screenY -= (screenYnext - (cameraHeight2 / (scale + 2.0 + abc) - cameraAngle2));\n        }\n    }\n}\n",
     }
 };

@@ -1142,10 +1142,10 @@ void main() {
             "abc": {
                 "label": "abc",
                 "type": "float",
-                "init": 0.0,
-                "min": -3.0,
-                "max": 30.0,
-                "step": 0.05,
+                "init": 1.0,
+                "min": -2.0,
+                "max": 2.0,
+                "step": 0.02,
             },
             "perspective": {
                 "label": "perspective",
@@ -1196,16 +1196,16 @@ varying vec2 uv;
 void main() {
     float screenY = 1.0 - uv.y;
     float originalY = screenY;
-    float cameraHeight2 = cameraHeight + abc;// * yGap;// - 1.2;
+    float cameraHeight2 = cameraHeight;// * yGap;// - 1.2;
     float cameraAngle2 = cameraAngle;// /yGap;
     for(int i = 0; i < 5; i++) {
-        float scale = floor( cameraHeight2 / (screenY + cameraAngle2)) - abc;
-        float screenYnext = cameraHeight2 / (scale + 1.0 + abc) - cameraAngle2;
-        float screenYprev = cameraHeight2 / (scale + abc) - cameraAngle2;
+        float scale = floor( cameraHeight2 / (screenY + cameraAngle2));
+        float screenYnext = cameraHeight2 / (scale + 1.0) - cameraAngle2;
+        float screenYprev = cameraHeight2 / (scale) - cameraAngle2;
         float stepSize = screenYprev - screenYnext;
         float rowProgress = (originalY - screenYnext) / stepSize;
-        float screenX = (uv.x - 0.5 + scale * crowdShift) * scale / 0.4 / (perspective - originalY) + 0.5;
-        float x = mod(screenX + xShift, 1.0 + xGap);
+        float screenX = (uv.x - 0.5 + crowdShift * (perspective - originalY)) * scale * perspective / (perspective - originalY) + 0.5;
+        float x = mod(screenX * (-2.0 / (2.0*perspective + 2.0) + 1.0) + xShift, 1.0 + xGap);
         float y = rowProgress * scale * stepSize;
         if (x >= 0.0 && x <= 1.0 && y >= 0.0 && y <= 1.0) {
             gl_FragColor = texture2D(
@@ -1216,7 +1216,7 @@ void main() {
         if (gl_FragColor.w > 0.0) {
             break;
         } else {
-            screenY -= (screenYnext - (cameraHeight2 / (scale + 2.0 + abc) - cameraAngle2));
+            screenY -= (screenYnext - (cameraHeight2 / (scale + 2.0) - cameraAngle2));
         }
     }
 }

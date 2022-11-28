@@ -1196,13 +1196,11 @@ varying vec2 uv;
 void main() {
     float screenY = 1.0 - uv.y;
     float originalY = screenY;
-    float cameraHeight2 = cameraHeight;// * yGap;// - 1.2;
-    float cameraAngle2 = cameraAngle;// /yGap;
     float perspective = 20.0 - 18.75 * pow(fishEye, 0.2);
     for(int i = 0; i < 5; i++) {
-        float scale = floor( cameraHeight2 / (screenY + cameraAngle2));
-        float screenYnext = cameraHeight2 / (scale + 1.0) - cameraAngle2;
-        float screenYprev = cameraHeight2 / (scale) - cameraAngle2;
+        float scale = floor( cameraHeight / (screenY + cameraAngle));
+        float screenYnext = cameraHeight / (scale + 1.0) - cameraAngle;
+        float screenYprev = cameraHeight / (scale) - cameraAngle;
         float stepSize = screenYprev - screenYnext;
         float rowProgress = (originalY - screenYnext) / stepSize;
         float screenX = (uv.x - 0.5 + crowdShift * (perspective - originalY)) * scale * perspective / (perspective - originalY) + 0.5;
@@ -1217,7 +1215,7 @@ void main() {
         if (gl_FragColor.w > 0.0) {
             break;
         } else {
-            screenY -= (screenYnext - (cameraHeight2 / (scale + 2.0) - cameraAngle2));
+            screenY -= (screenYnext - (cameraHeight / (scale + 2.0) - cameraAngle));
         }
     }
 }

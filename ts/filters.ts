@@ -1102,7 +1102,7 @@ void main() {
             "cameraAngle": {
                 "label": "Camr Ang.",
                 "type": "float",
-                "init": 0.25,
+                "init": 0.0,
                 "min": -0.5,
                 "max": 1.0,
                 "step": 0.05,
@@ -1146,6 +1146,14 @@ void main() {
                 "min": -2.0,
                 "max": 2.0,
                 "step": 0.02,
+            },
+            "shrink": {
+                "label": "Shrink",
+                "type": "float",
+                "init": 1.0,
+                "min": 0.3,
+                "max": 5.0,
+                "step": 0.05,
             },
             "fishEye": {
                 "label": "Fish Eye",
@@ -1197,22 +1205,24 @@ uniform float yGap;
 uniform float crowdShiftSpeed;
 uniform float xShift;
 uniform float abc;
+uniform float shrink;
 uniform float fishEye;
 uniform float zoom;
 
 varying vec2 uv;
 
 void main() {
-    float screenY = 1.0 - (uv.y + (zoom - 1.0) / 2.0)/ zoom;
+    vec2 uvZoomed = (uv + (zoom - 1.0) / 2.0) / zoom;
+    float screenY = 1.0 - uvZoomed.y;
     float originalY = screenY;
     float perspective = 20.0 - 18.75 * pow(fishEye, 0.2);
     for(int i = 0; i < 5; i++) {
         float scale = floor( cameraHeight / (screenY + cameraAngle));
         float screenYnext = cameraHeight / (scale + 1.0) - cameraAngle;
         float rowProgress = (originalY - screenYnext);
-        float screenX = ((uv.x + (zoom - 1.0) / 2.0)/ zoom - 0.5 + crowdShift * (perspective - originalY)) * scale * perspective / (perspective - originalY) + 0.5;
-        float x = mod(screenX * (-1.5 / (2.0*perspective + 2.0) + 1.0) + xShift, 1.0 + xGap);
-        float y = rowProgress * scale;
+        float screenX = (uvZoomed.x - 0.5 + crowdShift * (perspective - originalY)) * scale * perspective / (perspective - originalY) + 0.5;
+        float x = mod(screenX * shrink * (-1.5 / (2.0*perspective + 2.0) + 1.0) + xShift - (shrink - 1.0) / 2.0, (1.0 + xGap) * shrink);
+        float y = rowProgress * scale * shrink;
         if (x >= 0.0 && x <= 1.0 && y >= 0.0 && y <= 1.0) {
             gl_FragColor = texture2D(
                 emote,
@@ -1223,7 +1233,7 @@ void main() {
             break;
         } else {
             float screenYnextAfterThat = (cameraHeight / (scale + 2.0) - cameraAngle);
-            screenY -= (screenYnext - screenYnextAfterThat);
+            screenY -= (screenYnext - screenYnextAfterThat) ;
         }
     }
 }

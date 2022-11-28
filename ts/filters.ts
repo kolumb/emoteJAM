@@ -1147,12 +1147,12 @@ void main() {
                 "max": 2.0,
                 "step": 0.02,
             },
-            "perspective": {
-                "label": "perspective",
+            "fishEye": {
+                "label": "Fish Eye",
                 "type": "float",
-                "init": 3.0,
-                "min": -3.0,
-                "max": 30.0,
+                "init": 0.5,
+                "min": 0.0,
+                "max": 1.0,
                 "step": 0.05,
             }
         },
@@ -1189,7 +1189,7 @@ uniform float yGap;
 uniform float crowdShiftSpeed;
 uniform float xShift;
 uniform float abc;
-uniform float perspective;
+uniform float fishEye;
 
 varying vec2 uv;
 
@@ -1198,6 +1198,7 @@ void main() {
     float originalY = screenY;
     float cameraHeight2 = cameraHeight;// * yGap;// - 1.2;
     float cameraAngle2 = cameraAngle;// /yGap;
+    float perspective = 20.0 - 18.75 * pow(fishEye, 0.2);
     for(int i = 0; i < 5; i++) {
         float scale = floor( cameraHeight2 / (screenY + cameraAngle2));
         float screenYnext = cameraHeight2 / (scale + 1.0) - cameraAngle2;
@@ -1205,7 +1206,7 @@ void main() {
         float stepSize = screenYprev - screenYnext;
         float rowProgress = (originalY - screenYnext) / stepSize;
         float screenX = (uv.x - 0.5 + crowdShift * (perspective - originalY)) * scale * perspective / (perspective - originalY) + 0.5;
-        float x = mod(screenX * (-2.0 / (2.0*perspective + 2.0) + 1.0) + xShift, 1.0 + xGap);
+        float x = mod(screenX * (-1.5 / (2.0*perspective + 2.0) + 1.0) + xShift, 1.0 + xGap);
         float y = rowProgress * scale * stepSize;
         if (x >= 0.0 && x <= 1.0 && y >= 0.0 && y <= 1.0) {
             gl_FragColor = texture2D(

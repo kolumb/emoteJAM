@@ -1223,7 +1223,7 @@ void main() {
         float screenX = (uvZoomed.x - 0.5 + crowdShift * (perspective - originalY)) * scale * perspective / (perspective - originalY) + 0.5;
         float x = mod(screenX * shrink * (-1.5 / (2.0*perspective + 2.0) + 1.0) + xShift - (shrink - 1.0) / 2.0, (1.0 + xGap) * shrink);
         float y = rowProgress * scale * shrink;
-        if (x >= 0.0 && x <= 1.0 && y >= 0.0 && y <= 1.0) {
+        if (x >= 0.0 && x <= 1.0 && y >= 0.0 && y <= 1.0 && scale > 0.01) {
             gl_FragColor = texture2D(
                 emote,
                 vec2(x, y));
@@ -1233,7 +1233,7 @@ void main() {
             break;
         } else {
             float screenYnextAfterThat = (cameraHeight / (scale + 2.0) - cameraAngle);
-            screenY -= (screenYnext - screenYnextAfterThat) ;
+            screenY -= (screenYnext - screenYnextAfterThat);
         }
     }
 }
